@@ -1,20 +1,26 @@
 // components/Pagos.js
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import PayCard from "./PayCard";
-import { EditContext } from "../../context/EditContext";
 
 const Pagos = ({ total }) => {
-  const { editable, toggleEditable } = useContext(EditContext);
-  const [pagos, setPagos] = useState([
-    {
-      id: 1,
-      titulo: "Anticipo",
-      porcentaje: 100,
-      estado: "pendiente",
-      fecha: "",
-      monto: total,
-    },
-  ]);
+  const [pagos, setPagos] = useState(() => {
+    const storedPagos = localStorage.getItem("pagos");
+    return storedPagos
+      ? JSON.parse(storedPagos)
+      : [
+          {
+            id: 1,
+            titulo: "Anticipo",
+            porcentaje: 100,
+            estado: "pendiente",
+            fecha: "",
+            monto: total,
+          },
+        ];
+  });
+  useEffect(() => {
+    localStorage.setItem("pagos", JSON.stringify(pagos));
+  }, [pagos]);
 
   const crearNuevoPago = () => {
     const index = pagos.findIndex((pago) => pago.estado === "pendiente");
@@ -46,6 +52,33 @@ const Pagos = ({ total }) => {
     nuevosPagos.push(nuevoPago);
 
     setPagos(nuevosPagos);
+  };
+
+  const eliminarPago = (id) => {
+    const indiceEliminado = pagos.findIndex((pago) => pago.id === id);
+    if (indiceEliminado === -1) return;
+
+    const pagoEliminado = pagos[indiceEliminado];
+    const nuevosPagos = pagos.filter((pago) => pago.id !== id);
+
+    // Sumar el monto del pago eliminado al siguiente pago
+    if (indiceEliminado > 0 && pagoEliminado.estado === "anticipo") {
+      const pagoAnterior = nuevosPagos[indiceEliminado - 1];
+      const nuevoMonto = pagoAnterior.monto + pagoEliminado.monto;
+      nuevosPagos[indiceEliminado - 1] = {
+        ...pagoAnterior,
+        monto: nuevoMonto,
+      };
+    }
+
+    // Reorganizar IDs y títulos
+    const pagosFinales = nuevosPagos.map((pago, index) => ({
+      ...pago,
+      id: index + 1,
+      titulo: index === 0 ? "Anticipo" : `Pago ${index}`,
+    }));
+
+    setPagos(pagosFinales);
   };
 
   const marcarComoPagado = (id) => {
@@ -125,7 +158,7 @@ const Pagos = ({ total }) => {
             handleFechaCambio={handleFechaCambio}
             marcarComoPagado={marcarComoPagado}
             hoy={hoy}
-            editable={editable}
+            eliminarPago={eliminarPago}
           />
         ))}
       </div>

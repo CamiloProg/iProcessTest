@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useContext } from "react";
+import { EditContext } from "../../context/EditContext";
 
 const PayCard = ({
   id,
@@ -7,21 +8,27 @@ const PayCard = ({
   estado,
   fecha,
   monto,
-  total,
   ajustarPorcentaje,
   handleFechaCambio,
-  marcarComoPagado,
   hoy,
-  editable,
+  eliminarPago,
 }) => {
   const formatMonto = (monto) => {
-    return monto % 1 === 0 ? monto.toFixed(0) : monto.toFixed(1);
+    const montoRedondeado =
+      monto % 1 === 0 ? monto.toFixed(0) : monto.toFixed(1);
+    return montoRedondeado;
   };
 
+  const { editable } = useContext(EditContext);
+
+  const handleClickEliminar = () => {
+    eliminarPago(id); // Llamar a la función eliminarPago con el ID del pago
+  };
   return (
     <div key={id} className='flex flex-col p-3 items-center '>
       <span
-        className={`border-[3px]  w-12 h-12 rounded-full 
+        onClick={handleClickEliminar} // Agregar evento onClick para eliminar el pago
+        className={`border-[3px] cursor-pointer w-12 h-12 rounded-full 
         ${!editable ? "border-none bg-[#E2E8F0]" : "border-[#FC4024]"} `}
       ></span>
       <h2
