@@ -23,33 +23,24 @@ const Pagos = ({ total }) => {
   }, [pagos]);
 
   const crearNuevoPago = () => {
-    const index = pagos.findIndex((pago) => pago.estado === "pendiente");
-    if (index === -1) return;
-
-    const pagoSeleccionado = pagos[index];
-    const nuevoPorcentaje = Math.floor(pagoSeleccionado.porcentaje / 2 / 5) * 5;
-
+    const cantidadPagos = pagos.length;
+    const nuevoPorcentajeBase = 100 / (cantidadPagos + 1); // Se agrega 1 por el nuevo pago
     const nuevoPago = {
       id: pagos.length + 1,
       titulo: `Pago ${pagos.length}`,
-      porcentaje: nuevoPorcentaje,
+      porcentaje: nuevoPorcentajeBase,
       estado: "pendiente",
       fecha: "",
-      monto: (total * nuevoPorcentaje) / 100,
+      monto: (total * nuevoPorcentajeBase) / 100,
     };
 
-    const nuevosPagos = [...pagos];
+    const nuevosPagos = [...pagos, nuevoPago];
 
-    const porcentajeRestar = nuevoPorcentaje / pagos.length;
+    // Ajustar porcentajes de los pagos existentes
     nuevosPagos.forEach((pago) => {
-      pago.porcentaje = Math.max(
-        0,
-        Math.floor((pago.porcentaje - porcentajeRestar) / 5) * 5
-      );
-      pago.monto = (total * pago.porcentaje) / 100;
+      pago.porcentaje = nuevoPorcentajeBase;
+      pago.monto = (total * nuevoPorcentajeBase) / 100;
     });
-
-    nuevosPagos.push(nuevoPago);
 
     setPagos(nuevosPagos);
   };
@@ -57,19 +48,17 @@ const Pagos = ({ total }) => {
   const eliminarPago = (id) => {
     const indiceEliminado = pagos.findIndex((pago) => pago.id === id);
     if (indiceEliminado === -1) return;
+    const pagoAEliminar = pagos.find((pago) => pago.id === id);
+    if (
+      !pagoAEliminar ||
+      (pagoAEliminar.titulo === "Anticipo" && pagos.length === 1)
+    ) {
+      // No se puede eliminar el anticipo o la última deuda pendiente
+      return;
+    }
 
     const pagoEliminado = pagos[indiceEliminado];
     const nuevosPagos = pagos.filter((pago) => pago.id !== id);
-
-    // Sumar el monto del pago eliminado al siguiente pago
-    if (indiceEliminado > 0 && pagoEliminado.estado === "anticipo") {
-      const pagoAnterior = nuevosPagos[indiceEliminado - 1];
-      const nuevoMonto = pagoAnterior.monto + pagoEliminado.monto;
-      nuevosPagos[indiceEliminado - 1] = {
-        ...pagoAnterior,
-        monto: nuevoMonto,
-      };
-    }
 
     // Reorganizar IDs y títulos
     const pagosFinales = nuevosPagos.map((pago, index) => ({
@@ -77,6 +66,28 @@ const Pagos = ({ total }) => {
       id: index + 1,
       titulo: index === 0 ? "Anticipo" : `Pago ${index}`,
     }));
+
+    // Sumar el monto del pago eliminado al siguiente pago
+    if (indiceEliminado > 0 && pagoEliminado.estado === "pendiente") {
+      const pagoAnterior = pagosFinales[indiceEliminado - 1];
+      const nuevoMonto = pagoAnterior.monto + pagoEliminado.monto;
+      pagosFinales[indiceEliminado - 1] = {
+        ...pagoAnterior,
+        monto: nuevoMonto,
+      };
+    }
+
+    // Recalcular porcentajes y montos
+    const totalPorcentaje = pagosFinales.reduce(
+      (acc, pago) => acc + pago.porcentaje,
+      0
+    );
+    const factorRedistribucion = total / (total - pagoEliminado.monto);
+
+    pagosFinales.forEach((pago) => {
+      pago.porcentaje = (pago.porcentaje / totalPorcentaje) * 100;
+      pago.monto = (total * pago.porcentaje) / 100;
+    });
 
     setPagos(pagosFinales);
   };
@@ -109,9 +120,7 @@ const Pagos = ({ total }) => {
       nuevoPorcentajeActual < 0 ||
       nuevoPorcentajeVecino < 0 ||
       nuevoPorcentajeActual > 100 ||
-      nuevoPorcentajeVecino > 100 ||
-      nuevoPorcentajeActual % 5 !== 0 ||
-      nuevoPorcentajeVecino % 5 !== 0
+      nuevoPorcentajeVecino > 100
     )
       return;
 

@@ -26,11 +26,23 @@ const PayCard = ({
   };
   return (
     <div key={id} className='flex flex-col p-3 items-center '>
-      <span
-        onClick={handleClickEliminar} // Agregar evento onClick para eliminar el pago
-        className={`border-[3px] cursor-pointer w-12 h-12 rounded-full 
+      {editable ? (
+        <span
+          onClick={handleClickEliminar} // Agregar evento onClick para eliminar el pago
+          className={`border-[3px] flex justify-center text-white items-center cursor-pointer hover:bg-[#FC4024] w-12 h-12 rounded-full 
         ${!editable ? "border-none bg-[#E2E8F0]" : "border-[#FC4024]"} `}
-      ></span>
+        >
+          <div className=''>
+            <i className={`fa-solid fa-x `}></i>
+          </div>
+        </span>
+      ) : (
+        <span
+          className={`border-[3px] w-12 h-12 rounded-full 
+      ${!editable ? "border-none bg-[#E2E8F0]" : "border-[#FC4024]"} `}
+        ></span>
+      )}
+
       <h2
         className={`text-xl font-bold w-full rounded-sm mt-2
             ${editable ? "border" : ""}`}
@@ -51,7 +63,7 @@ const PayCard = ({
       {editable ? (
         <div className='flex items-center justify-center mt-2 gap-3 w-full'>
           <button
-            onClick={() => ajustarPorcentaje(id, -5)}
+            onClick={() => ajustarPorcentaje(id, -1)}
             className='w-7 h-7 text-[#FF7A66] border border-[#FF7A66] rounded-full'
             disabled={!editable}
           >
@@ -59,7 +71,7 @@ const PayCard = ({
           </button>
           <p>{porcentaje.toFixed(0)}%</p>
           <button
-            onClick={() => ajustarPorcentaje(id, 5)}
+            onClick={() => ajustarPorcentaje(id, 1)}
             className='w-7 h-7 text-[#FF7A66] border border-[#FF7A66] rounded-full'
             disabled={!editable}
           >
