@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+// components/Pagos.js
+import React, { useState, useContext } from "react";
 import PayCard from "./PayCard";
-
-// Constantes
-const MONEDA = "USD";
-const PRECISION = 1;
+import { EditContext } from "../../context/EditContext";
 
 const Pagos = ({ total }) => {
+  const { editable, toggleEditable } = useContext(EditContext);
   const [pagos, setPagos] = useState([
     {
       id: 1,
@@ -35,10 +34,7 @@ const Pagos = ({ total }) => {
 
     const nuevosPagos = [...pagos];
 
-    // Calcular el porcentaje a restar de cada pago existente
     const porcentajeRestar = nuevoPorcentaje / pagos.length;
-
-    // Reducir el porcentaje de todos los pagos existentes
     nuevosPagos.forEach((pago) => {
       pago.porcentaje = Math.max(
         0,
@@ -47,7 +43,6 @@ const Pagos = ({ total }) => {
       pago.monto = (total * pago.porcentaje) / 100;
     });
 
-    // Insertar el nuevo pago
     nuevosPagos.push(nuevoPago);
 
     setPagos(nuevosPagos);
@@ -77,7 +72,6 @@ const Pagos = ({ total }) => {
     const nuevoPorcentajeActual = pagoActual.porcentaje + delta;
     const nuevoPorcentajeVecino = pagoVecino.porcentaje - delta;
 
-    // Verificar que los porcentajes no sean negativos y sean múltiplos de 5
     if (
       nuevoPorcentajeActual < 0 ||
       nuevoPorcentajeVecino < 0 ||
@@ -105,7 +99,7 @@ const Pagos = ({ total }) => {
     setPagos(nuevosPagos);
   };
 
-  const hoy = new Date().toISOString().split("T")[0]; // Obtener la fecha actual en formato YYYY-MM-DD
+  const hoy = new Date().toISOString().split("T")[0];
 
   return (
     <div className='container mx-auto p-4'>
@@ -115,6 +109,7 @@ const Pagos = ({ total }) => {
       >
         Crear Nuevo Pago
       </button>
+
       <div className='mt-4 flex overflow-x-auto'>
         {pagos.map((pago) => (
           <PayCard
@@ -130,6 +125,7 @@ const Pagos = ({ total }) => {
             handleFechaCambio={handleFechaCambio}
             marcarComoPagado={marcarComoPagado}
             hoy={hoy}
+            editable={editable}
           />
         ))}
       </div>
