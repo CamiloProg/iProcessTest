@@ -1,6 +1,7 @@
-// components/Pagos.js
 import React, { useState, useContext, useEffect } from "react";
 import PayCard from "./PayCard";
+import { EditContext } from "../../context/EditContext";
+import Modal from "./Modal";
 
 const Pagos = ({ total }) => {
   const [pagos, setPagos] = useState(() => {
@@ -18,31 +19,52 @@ const Pagos = ({ total }) => {
           },
         ];
   });
+
+  const [selectedPago, setSelectedPago] = useState(null);
+  const [canPay, setCanPay] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("pagos", JSON.stringify(pagos));
   }, [pagos]);
 
+  const recalcularPagosPendientes = (pagos, total) => {
+    const pagosPendientes = pagos.filter((pago) => pago.estado === "pendiente");
+    const pagosPagados = pagos.filter((pago) => pago.estado === "pagado");
+
+    const totalPorcentajePagados = pagosPagados.reduce(
+      (acc, pago) => acc + pago.porcentaje,
+      0
+    );
+    const porcentajeRestante = 100 - totalPorcentajePagados;
+
+    const nuevoPorcentajeBase = porcentajeRestante / pagosPendientes.length;
+
+    return pagos.map((pago) => {
+      if (pago.estado === "pendiente") {
+        return {
+          ...pago,
+          porcentaje: nuevoPorcentajeBase,
+          monto: (total * nuevoPorcentajeBase) / 100,
+        };
+      }
+      return pago;
+    });
+  };
+
   const crearNuevoPago = () => {
-    const cantidadPagos = pagos.length;
-    const nuevoPorcentajeBase = 100 / (cantidadPagos + 1); // Se agrega 1 por el nuevo pago
     const nuevoPago = {
       id: pagos.length + 1,
       titulo: `Pago ${pagos.length}`,
-      porcentaje: nuevoPorcentajeBase,
+      porcentaje: 0,
       estado: "pendiente",
       fecha: "",
-      monto: (total * nuevoPorcentajeBase) / 100,
+      monto: 0,
     };
 
     const nuevosPagos = [...pagos, nuevoPago];
+    const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
 
-    // Ajustar porcentajes de los pagos existentes
-    nuevosPagos.forEach((pago) => {
-      pago.porcentaje = nuevoPorcentajeBase;
-      pago.monto = (total * nuevoPorcentajeBase) / 100;
-    });
-
-    setPagos(nuevosPagos);
+    setPagos(pagosRecalculados);
   };
 
   const eliminarPago = (id) => {
@@ -67,26 +89,23 @@ const Pagos = ({ total }) => {
       titulo: index === 0 ? "Anticipo" : `Pago ${index}`,
     }));
 
-    // Sumar el monto del pago eliminado al siguiente pago
-    if (indiceEliminado > 0 && pagoEliminado.estado === "pendiente") {
-      const pagoAnterior = pagosFinales[indiceEliminado - 1];
-      const nuevoMonto = pagoAnterior.monto + pagoEliminado.monto;
-      pagosFinales[indiceEliminado - 1] = {
-        ...pagoAnterior,
-        monto: nuevoMonto,
-      };
-    }
+    // Calcular el total de los porcentajes de los pagos pendientes
+    const totalPorcentajePendiente = pagosFinales.reduce((acc, pago) => {
+      return pago.estado === "pendiente" ? acc + pago.porcentaje : acc;
+    }, 0);
 
-    // Recalcular porcentajes y montos
-    const totalPorcentaje = pagosFinales.reduce(
-      (acc, pago) => acc + pago.porcentaje,
-      0
-    );
-    const factorRedistribucion = total / (total - pagoEliminado.monto);
-
+    // Redistribuir porcentajes y montos solo para los pagos pendientes
     pagosFinales.forEach((pago) => {
-      pago.porcentaje = (pago.porcentaje / totalPorcentaje) * 100;
-      pago.monto = (total * pago.porcentaje) / 100;
+      if (pago.estado === "pendiente") {
+        // Recalcular el porcentaje del pago pendiente con base en el total de porcentajes pendientes
+        pago.porcentaje =
+          (pago.porcentaje / totalPorcentajePendiente) *
+          (100 -
+            pagos
+              .filter((p) => p.estado === "pagado")
+              .reduce((acc, p) => acc + p.porcentaje, 0));
+        pago.monto = (total * pago.porcentaje) / 100;
+      }
     });
 
     setPagos(pagosFinales);
@@ -99,7 +118,10 @@ const Pagos = ({ total }) => {
         : pago
     );
 
-    setPagos(nuevosPagos);
+    const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
+
+    setPagos(pagosRecalculados);
+    setSelectedPago(null);
   };
 
   const ajustarPorcentaje = (id, delta) => {
@@ -141,6 +163,11 @@ const Pagos = ({ total }) => {
     setPagos(nuevosPagos);
   };
 
+  const handleSelectPago = (pago, puedePagar) => {
+    setCanPay(puedePagar);
+    setSelectedPago(pago);
+  };
+
   const hoy = new Date().toISOString().split("T")[0];
 
   return (
@@ -153,7 +180,7 @@ const Pagos = ({ total }) => {
       </button>
 
       <div className='mt-4 flex overflow-x-auto'>
-        {pagos.map((pago) => (
+        {pagos.map((pago, index) => (
           <PayCard
             key={pago.id}
             id={pago.id}
@@ -168,11 +195,31 @@ const Pagos = ({ total }) => {
             marcarComoPagado={marcarComoPagado}
             hoy={hoy}
             eliminarPago={eliminarPago}
+            puedePagar={index === 0 || pagos[index - 1].estado === "pagado"}
+            onSelectPago={(puedePagar) => handleSelectPago(pago, puedePagar)}
           />
         ))}
       </div>
+
+      {selectedPago && (
+        <Modal
+          titulo={
+            canPay ? "Confirmar Pago" : "No se puede pagar fuera de orden"
+          }
+          mensaje={
+            canPay
+              ? "¿Está seguro de que desea marcar este pago como pagado?"
+              : "Debe pagar los pagos anteriores antes de realizar este pago."
+          }
+          onClose={() => setSelectedPago(null)}
+          onConfirm={() =>
+            canPay &&
+            marcarComoPagado(pagos.find((p) => p.id === selectedPago.id).id)
+          }
+          confirmDisabled={!canPay}
+        />
+      )}
     </div>
   );
 };
-
 export default Pagos;
