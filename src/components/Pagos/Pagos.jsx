@@ -34,6 +34,7 @@ const Pagos = ({ total }) => {
   });
 
   const [selectedPago, setSelectedPago] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState(null);
   const [canPay, setCanPay] = useState(false);
 
   useEffect(() => {
@@ -105,7 +106,7 @@ const Pagos = ({ total }) => {
     const pagosFinales = nuevosPagos.map((pago, index) => ({
       ...pago,
       id: index + 1,
-      titulo: index === 0 ? "Anticipo" : `Pago ${index}`,
+      titulo: index === 0 ? "Anticipo" : pago.titulo,
     }));
 
     // Calcular el total de los porcentajes de los pagos pendientes
@@ -188,6 +189,13 @@ const Pagos = ({ total }) => {
 
     setPagos(nuevosPagos);
   };
+  const handlePaymentMethodChange = (id, paymentMethod) => {
+    const nuevosPagos = pagos.map((pago) =>
+      pago.id === id ? { ...pago, paymentMethod } : pago
+    );
+    console.log(paymentMethod);
+    setPagos(nuevosPagos);
+  };
 
   const handleSelectPago = (pago, puedePagar) => {
     setCanPay(puedePagar);
@@ -213,6 +221,7 @@ const Pagos = ({ total }) => {
               handleFechaCambio={handleFechaCambio}
               handleNombreCambio={handleNombreCambio}
               marcarComoPagado={marcarComoPagado}
+              paymentMethod={pago.paymentMethod} // Pasar el método de pago como propiedad
               hoy={hoy}
               eliminarPago={eliminarPago}
               puedePagar={index === 0 || pagos[index - 1].estado === "pagado"}
@@ -248,6 +257,10 @@ const Pagos = ({ total }) => {
             marcarComoPagado(pagos.find((p) => p.id === selectedPago.id).id)
           }
           confirmDisabled={!canPay}
+          paymentMethodOptions={["Efectivo", "Tarjeta"]}
+          onPaymentMethodChange={(paymentMethod) =>
+            handlePaymentMethodChange(selectedPago.id, paymentMethod)
+          }
         />
       )}
       <button className='bg-red-400 w-80 mt-10' onClick={() => reset()}>

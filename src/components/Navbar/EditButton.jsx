@@ -11,8 +11,16 @@ const EditButton = () => {
       }`}
       onClick={toggleEditable}
     >
-      <h3>{editable ? "Guardar" : "Editar"}</h3>
-      <i className={`fa-solid ${editable ? "fa-save" : "fa-pencil"}`}></i>
+      <h3
+        className={`${
+          editable
+            ? "bg-[#FC4024] hover:scale-105 px-5 py-2 flex justify-center items-center rounded-md text-white"
+            : "text-lg"
+        }`}
+      >
+        {editable ? "Guardar" : "Editar"}
+      </h3>
+      <i className={`fa-solid ${editable ? "" : "fa-pencil"}`}></i>
     </div>
   );
 };
