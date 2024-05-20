@@ -8,9 +8,12 @@ const EditProvider = ({ children }) => {
   const toggleEditable = () => {
     setEditable(!editable);
   };
+  const editableTrue = () => {
+    setEditable(true);
+  };
 
   return (
-    <EditContext.Provider value={{ editable, toggleEditable }}>
+    <EditContext.Provider value={{ editable, toggleEditable, editableTrue }}>
       {children}
     </EditContext.Provider>
   );

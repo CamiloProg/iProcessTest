@@ -10,6 +10,7 @@ const PayCard = ({
   monto,
   ajustarPorcentaje,
   handleFechaCambio,
+  handleNombreCambio,
   hoy,
   eliminarPago,
   onSelectPago,
@@ -24,7 +25,9 @@ const PayCard = ({
   const { editable } = useContext(EditContext);
 
   const handleClickEliminar = () => {
-    eliminarPago(id);
+    if (editable) {
+      eliminarPago(id);
+    }
   };
 
   return (
@@ -37,7 +40,7 @@ const PayCard = ({
         !editable && estado !== "pagado" && onSelectPago(puedePagar)
       }
     >
-      {editable ? (
+      {editable && estado !== "pagado" ? (
         <span
           onClick={handleClickEliminar}
           className={`border-[3px] flex justify-center text-white items-center cursor-pointer hover:bg-[#FC4024] w-12 h-12 rounded-full ${
@@ -60,23 +63,39 @@ const PayCard = ({
         ></span>
       )}
 
-      <h2
-        className={`text-xl font-bold w-full rounded-sm mt-2 ${
-          editable ? "border" : ""
+      <input
+        type='text'
+        className={`text-xl bg-transparent text-center pointer-events-none placeholder-black font-bold w-36 rounded-sm mt-2 ${
+          editable && estado !== "pagado" ? "border pointer-events-auto " : ""
         }`}
-      >
-        {titulo}
-      </h2>
+        onChange={(e) => handleNombreCambio(id, e.target.value)}
+        placeholder={titulo}
+        disabled={!editable || estado === "pagado"}
+      ></input>
       <div
         className={`w-full rounded-sm mt-2 flex px-2 ${
-          editable ? "border justify-between" : "gap-1"
+          editable && estado !== "pagado" ? "border justify-between" : "gap-1"
         }`}
       >
         <h3 className='text-[#0F172A] font-semibold'>${formatMonto(monto)}</h3>
-        <h3 className={`font-semibold ${editable ? "text-[#94A3B8]" : ""}`}>
+        <h3
+          className={`font-semibold ${
+            editable && estado == "pagado"
+              ? "text-black"
+              : editable
+              ? "text-[#94A3B8]"
+              : ""
+          }`}
+        >
           USD
         </h3>
-        {!editable ? <p>({porcentaje.toFixed(0)}%)</p> : ""}
+        {editable && estado == "pagado" ? (
+          <p>({porcentaje.toFixed(0)}%)</p>
+        ) : !editable ? (
+          <p>({porcentaje.toFixed(0)}%)</p>
+        ) : (
+          ""
+        )}
       </div>
 
       {editable && estado !== "pagado" ? (

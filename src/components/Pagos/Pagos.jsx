@@ -4,6 +4,19 @@ import { EditContext } from "../../context/EditContext";
 import Modal from "./Modal";
 
 const Pagos = ({ total }) => {
+  const { editableTrue } = useContext(EditContext);
+  function reset() {
+    setPagos([
+      {
+        id: 1,
+        titulo: "Anticipo",
+        porcentaje: 100,
+        estado: "pendiente",
+        fecha: "",
+        monto: total,
+      },
+    ]);
+  }
   const [pagos, setPagos] = useState(() => {
     const storedPagos = localStorage.getItem("pagos");
     return storedPagos
@@ -51,20 +64,26 @@ const Pagos = ({ total }) => {
     });
   };
 
-  const crearNuevoPago = () => {
+  const crearNuevoPagoEnPosicion = (index) => {
     const nuevoPago = {
       id: pagos.length + 1,
-      titulo: `Pago ${pagos.length}`,
+      titulo: `Nuevo`,
       porcentaje: 0,
       estado: "pendiente",
       fecha: "",
       monto: 0,
+      editable: true,
     };
 
-    const nuevosPagos = [...pagos, nuevoPago];
+    const nuevosPagos = [
+      ...pagos.slice(0, index + 1),
+      nuevoPago,
+      ...pagos.slice(index + 1),
+    ];
     const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
 
     setPagos(pagosRecalculados);
+    editableTrue();
   };
 
   const eliminarPago = (id) => {
@@ -162,6 +181,13 @@ const Pagos = ({ total }) => {
 
     setPagos(nuevosPagos);
   };
+  const handleNombreCambio = (id, titulo) => {
+    const nuevosPagos = pagos.map((pago) =>
+      pago.id === id ? { ...pago, titulo: titulo } : pago
+    );
+
+    setPagos(nuevosPagos);
+  };
 
   const handleSelectPago = (pago, puedePagar) => {
     setCanPay(puedePagar);
@@ -172,32 +198,37 @@ const Pagos = ({ total }) => {
 
   return (
     <div className='container mx-auto p-4'>
-      <button
-        onClick={crearNuevoPago}
-        className='mt-4 p-2 bg-blue-500 text-white rounded'
-      >
-        Crear Nuevo Pago
-      </button>
-
       <div className='mt-4 flex overflow-x-auto'>
         {pagos.map((pago, index) => (
-          <PayCard
-            key={pago.id}
-            id={pago.id}
-            titulo={pago.titulo}
-            porcentaje={pago.porcentaje}
-            estado={pago.estado}
-            fecha={pago.fecha}
-            monto={pago.monto}
-            total={total}
-            ajustarPorcentaje={ajustarPorcentaje}
-            handleFechaCambio={handleFechaCambio}
-            marcarComoPagado={marcarComoPagado}
-            hoy={hoy}
-            eliminarPago={eliminarPago}
-            puedePagar={index === 0 || pagos[index - 1].estado === "pagado"}
-            onSelectPago={(puedePagar) => handleSelectPago(pago, puedePagar)}
-          />
+          <React.Fragment key={pago.id}>
+            <PayCard
+              id={pago.id}
+              titulo={pago.titulo}
+              porcentaje={pago.porcentaje}
+              estado={pago.estado}
+              fecha={pago.fecha}
+              monto={pago.monto}
+              total={total}
+              ajustarPorcentaje={ajustarPorcentaje}
+              handleFechaCambio={handleFechaCambio}
+              handleNombreCambio={handleNombreCambio}
+              marcarComoPagado={marcarComoPagado}
+              hoy={hoy}
+              eliminarPago={eliminarPago}
+              puedePagar={index === 0 || pagos[index - 1].estado === "pagado"}
+              onSelectPago={(puedePagar) => handleSelectPago(pago, puedePagar)}
+            />
+            {index < pagos.length - 1 &&
+            pago.estado === "pagado" &&
+            pagos[index + 1].estado === "pagado" ? null : (
+              <button
+                onClick={() => crearNuevoPagoEnPosicion(index)}
+                className='mx-2 p-2 bg-blue-500 text-white rounded'
+              >
+                Añadir Pago
+              </button>
+            )}
+          </React.Fragment>
         ))}
       </div>
 
@@ -219,7 +250,11 @@ const Pagos = ({ total }) => {
           confirmDisabled={!canPay}
         />
       )}
+      <button className='bg-red-400 w-80 mt-10' onClick={() => reset()}>
+        reset
+      </button>
     </div>
   );
 };
+
 export default Pagos;
