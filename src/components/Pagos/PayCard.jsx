@@ -17,11 +17,15 @@ const PayCard = ({
   onSelectPago,
   puedePagar,
 }) => {
+
+  // Aqui el monto se le da un formato para que se redondee y no muestre muchas decimales
   const formatMonto = (monto) => {
     const montoRedondeado =
       monto % 1 === 0 ? monto.toFixed(0) : monto.toFixed(1);
     return montoRedondeado;
   };
+
+  // Para poder tener la fecha seteada con los diferentes meses y no con el formato de dd/mm/yyyy
   const formatFecha = (fechaString) => {
     // Array de meses en español
     const meses = [
@@ -52,7 +56,8 @@ const PayCard = ({
 
     return fechaFormateada;
   };
-
+  // Contexto para saber si la pagina esta en modo editar o no, y asi
+  // mostrar ciertos estilos y funcionalidades o no
   const { editable } = useContext(EditContext);
 
   const handleClickEliminar = () => {
@@ -63,6 +68,9 @@ const PayCard = ({
 
   return (
     <div key={id} className={`flex flex-col p-3 z-20 items-center }`}>
+      {/* Realice muchas condiciones ya que es un componente el cual cambia
+      segun el estado en el que se encuentre, si esta pagado tendra una vista,
+      si esta en editar, otra y si esta sin editar ni pagado, tendra otra vista diferente */}
       {editable && estado !== "pagado" ? (
         <span
           onClick={handleClickEliminar}

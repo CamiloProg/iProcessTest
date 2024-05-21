@@ -5,6 +5,8 @@ import Modal from "./Modal";
 
 const Pagos = ({ total }) => {
   const { editableTrue } = useContext(EditContext);
+
+  //Funcion para resetear todos los valores a default para poder iniciar el proceso de nuevo
   function reset() {
     setPagos([
       {
@@ -17,6 +19,11 @@ const Pagos = ({ total }) => {
       },
     ]);
   }
+
+  // Se guardan los pagos en esta variable "pagos" use el localStorage para que
+  // el usuario pueda salir o recargar la pagina sin temor a que se borren los datos
+  // de las cuotas (el porcentaje, monto, cuantas son, etc).
+  // Si no tiene nada en el local, simplemente se ponen los datos default
   const [pagos, setPagos] = useState(() => {
     const storedPagos = localStorage.getItem("pagos");
     return storedPagos
@@ -33,14 +40,20 @@ const Pagos = ({ total }) => {
         ];
   });
 
+  // Estados que permiten pagar una cuota, hice estos 2, para poder identificar
+  // que pago estan seleccionando y ademas validad con el "canPay" si es una
+  // cuota que se pueda pagar, es decir, no puede pagarse si la anterior
+  // a ella no se ha pagado
   const [selectedPago, setSelectedPago] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState(null);
   const [canPay, setCanPay] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("pagos", JSON.stringify(pagos));
   }, [pagos]);
 
+  // Hice esta funciona ya que necesitaba recalcular los porcentajes de los pagos
+  // pero solo los pendientes, ya que los pagados no son modificables
+  // de esta forma cuando se agrega un nuevo pago, se equilibran entre todos los pendientes
   const recalcularPagosPendientes = (pagos, total) => {
     const pagosPendientes = pagos.filter((pago) => pago.estado === "pendiente");
     const pagosPagados = pagos.filter((pago) => pago.estado === "pagado");
@@ -65,6 +78,9 @@ const Pagos = ({ total }) => {
     });
   };
 
+  // Se crea el nuevo pago con ciertas caracteristicas por default y se cambia
+  // al modo editable para que puedan cambiar el nombre y el porcentaje a pagar
+  // Use la funcion de recalcular para que se equilibren los porcentajes al crear
   const crearNuevoPagoEnPosicion = (index) => {
     const nuevoPago = {
       id: pagos.length + 1,
@@ -81,24 +97,51 @@ const Pagos = ({ total }) => {
       nuevoPago,
       ...pagos.slice(index + 1),
     ];
-
-    setPagos(nuevosPagos); // Establecer los pagos sin recalcular inicialmente
+    const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
+    setPagos(pagosRecalculados); // Establecer los pagos sin recalcular inicialmente
     editableTrue();
   };
 
+  // Esta funcion fue interesante, ya que se necesita varias verificaciones para no
+  // perder porcentaje final o el monto, asi que cuando se elimina un pago
+  // decidi que el porcentaje que tuviera, se pasaria al pago pendiente mas cercano
   const eliminarPago = (id) => {
-    const indiceEliminado = pagos.findIndex((pago) => pago.id === id);
-    if (indiceEliminado === -1) return;
-    const pagoAEliminar = pagos.find((pago) => pago.id === id);
-    if (
-      !pagoAEliminar ||
-      (pagoAEliminar.titulo === "Anticipo" && pagos.length === 1)
-    ) {
-      // No se puede eliminar el anticipo o la última deuda pendiente
-      return;
+    const indexEliminado = pagos.findIndex((pago) => pago.id === id);
+    if (indexEliminado === -1 || indexEliminado === 0) return; // No hacer nada si el pago no existe o es el primer pago
+
+    const pagoAEliminar = pagos[indexEliminado];
+    if (!pagoAEliminar) return;
+
+    let indexTransferirPorcentaje = -1;
+    let porcentajeEliminado = 0;
+
+    // Encontrar el índice del pago pendiente más cercano para transferir el porcentaje
+    for (let i = indexEliminado - 1; i >= 0; i--) {
+      if (pagos[i].estado === "pendiente") {
+        indexTransferirPorcentaje = i;
+        break;
+      }
     }
 
-    const pagoEliminado = pagos[indiceEliminado];
+    // Si no hay pagos pendientes antes del eliminado, buscar después del eliminado
+    if (indexTransferirPorcentaje === -1) {
+      for (let i = indexEliminado + 1; i < pagos.length; i++) {
+        if (pagos[i].estado === "pendiente") {
+          indexTransferirPorcentaje = i;
+          break;
+        }
+      }
+    }
+
+    // Transferir el porcentaje del pago eliminado al pago pendiente más cercano
+    if (indexTransferirPorcentaje !== -1) {
+      porcentajeEliminado = pagoAEliminar.porcentaje;
+      pagos[indexTransferirPorcentaje].porcentaje += porcentajeEliminado;
+      pagos[indexTransferirPorcentaje].monto =
+        (total * pagos[indexTransferirPorcentaje].porcentaje) / 100;
+    }
+
+    // Eliminar el pago
     const nuevosPagos = pagos.filter((pago) => pago.id !== id);
 
     // Reorganizar IDs y títulos
@@ -108,28 +151,20 @@ const Pagos = ({ total }) => {
       titulo: index === 0 ? "Anticipo" : pago.titulo,
     }));
 
-    // Calcular el total de los porcentajes de los pagos pendientes
-    const totalPorcentajePendiente = pagosFinales.reduce((acc, pago) => {
-      return pago.estado === "pendiente" ? acc + pago.porcentaje : acc;
-    }, 0);
-
-    // Redistribuir porcentajes y montos solo para los pagos pendientes
-    pagosFinales.forEach((pago) => {
-      if (pago.estado === "pendiente") {
-        // Recalcular el porcentaje del pago pendiente con base en el total de porcentajes pendientes
-        pago.porcentaje =
-          (pago.porcentaje / totalPorcentajePendiente) *
-          (100 -
-            pagos
-              .filter((p) => p.estado === "pagado")
-              .reduce((acc, p) => acc + p.porcentaje, 0));
-        pago.monto = (total * pago.porcentaje) / 100;
-      }
-    });
+    // Actualizar el estado de los pagos pendientes si el pago eliminado estaba pagado
+    if (pagoAEliminar.estado === "pagado") {
+      pagosFinales.forEach((pago) => {
+        if (pago.estado === "pendiente") {
+          pago.estado = "pagado";
+        }
+      });
+    }
 
     setPagos(pagosFinales);
   };
 
+  // Simplemente es necesario un valor para saber si esta pagado o pendiente
+  // para distintas funcionalidades en el sistema
   const marcarComoPagado = (id) => {
     const nuevosPagos = pagos.map((pago) =>
       pago.id === id && pago.estado === "pendiente"
@@ -137,12 +172,13 @@ const Pagos = ({ total }) => {
         : pago
     );
 
-    const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
-
-    setPagos(pagosRecalculados);
+    setPagos(nuevosPagos);
     setSelectedPago(null);
   };
 
+  // Realice esta funcion para poder modificar los porcentajes de cada pago,
+  // agarrando un poco del pago vecino y tambien la condicion para que nunca
+  // se pase del 100% o menos del 0%
   const ajustarPorcentaje = (id, delta) => {
     const index = pagos.findIndex((pago) => pago.id === id);
     if (index === -1) return;
@@ -150,7 +186,7 @@ const Pagos = ({ total }) => {
     const pagoActual = pagos[index];
     if (pagoActual.estado === "pagado") return;
 
-    const vecinoIndex = index === 0 ? index + 1 : index - 1;
+    let vecinoIndex = index === 0 ? index + 1 : index - 1;
     const pagoVecino = pagos[vecinoIndex];
     if (!pagoVecino || pagoVecino.estado === "pagado") return;
 
@@ -174,6 +210,8 @@ const Pagos = ({ total }) => {
     setPagos(nuevosPagos);
   };
 
+  // Las siguientes 4 funciones es para controlar los cambios
+  // que hay en los pagos y agregarlos a la lista de pagos
   const handleFechaCambio = (id, fecha) => {
     const nuevosPagos = pagos.map((pago) =>
       pago.id === id ? { ...pago, fecha } : pago
@@ -192,7 +230,7 @@ const Pagos = ({ total }) => {
     const nuevosPagos = pagos.map((pago) =>
       pago.id === id ? { ...pago, paymentMethod } : pago
     );
-    console.log(paymentMethod);
+
     setPagos(nuevosPagos);
   };
 
@@ -201,13 +239,19 @@ const Pagos = ({ total }) => {
     setSelectedPago(pago);
   };
 
+  // Es necesario para cuando paguen, se coloque el dia en el que se oprimio el boton
   const hoy = new Date().toISOString().split("T")[0];
 
   return (
-    <div className='container mx-auto p-4'>
-      <div className='mt-4 flex overflow-x-auto'>
+    <div className='container flex flex-col  justify-center items-center  p-4'>
+      <div className='mt-4 flex  overflow-x-auto  md:w-[720px] w-full  '>
+
+        {/* Hice este map para mostrar todos los pagos con sus respectivas caracteristicas 
+        y con ciertas condiciones para mostrar la linea del tiempo, dependiendo si esta pagado, o si es el primero
+        o si es el ultimo, cada uno, tiene una diferente vista */}
         {pagos.map((pago, index) => (
           <React.Fragment key={pago.id}>
+            {/* Para hacerlo mas sencillo, elabore un componente y le pase todas las props */}
             <PayCard
               id={pago.id}
               titulo={pago.titulo}
@@ -226,6 +270,7 @@ const Pagos = ({ total }) => {
               puedePagar={index === 0 || pagos[index - 1].estado === "pagado"}
               onSelectPago={(puedePagar) => handleSelectPago(pago, puedePagar)}
             />
+            {/* Esta logica condicional la hice para la linea del tiempo */}
             {pagos.length === 1 ? (
               <div className='relative -z-20-'>
                 <hr className='border-[#E2E8F0] border-2 w-[130px] absolute top-9 -right-16' />
@@ -239,7 +284,11 @@ const Pagos = ({ total }) => {
               </div>
             ) : index + 1 === pagos.length ? null : index < pagos.length - 2 &&
               pago.estado === "pagado" &&
-              pagos[index + 1].estado === "pagado" ? null : (
+              pagos[index + 1].estado === "pagado" ? (
+              <div className='relative -z-20-'>
+                <hr className='border-green-500 border-2 w-[130px] absolute top-9 -right-16' />
+              </div>
+            ) : (
               <div className='relative -z-20-'>
                 <hr className='border-[#E2E8F0] border-2 w-[130px] absolute top-9 -right-16' />
                 <button
@@ -254,6 +303,7 @@ const Pagos = ({ total }) => {
         ))}
       </div>
 
+      {/* Modal para hacer el pago */}
       {selectedPago && (
         <Modal
           titulo={canPay ? "Pagar" : "No se puede pagar fuera de orden"}
@@ -274,6 +324,7 @@ const Pagos = ({ total }) => {
           }
         />
       )}
+      {/* Reset para dejar todo por default */}
       <button className='bg-red-400 w-80 mt-10' onClick={() => reset()}>
         reset
       </button>

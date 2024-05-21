@@ -1,7 +1,8 @@
 import React, { useContext } from "react";
-import { EditContext } from "../../context/EditContext"; // Asegúrate de importar EditContext correctamente
+import { EditContext } from "../../context/EditContext"; 
 
 const EditButton = () => {
+  // Contexto para actualizarlo y dejar saber a la pagina si esta en modo editar o no
   const { editable, toggleEditable } = useContext(EditContext);
 
   return (
