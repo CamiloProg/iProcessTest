@@ -9,7 +9,6 @@ const Modal = ({
   paymentMethodOptions,
   onPaymentMethodChange,
 }) => {
-
   // Se necesita saber que pago fue el seleccionado para asi guardarlo, tambien
   // hay condiciones para que no deje pagar sin elegir el metodo de pago
   // y hay un modal diferente si esta intentando pagar un pago adelantado
@@ -18,11 +17,11 @@ const Modal = ({
   const handlePaymentMethodChange = (e) => {
     const selectedMethod = e.target.value;
     setSelectedPaymentMethod(selectedMethod);
-    onPaymentMethodChange(selectedMethod); 
+    onPaymentMethodChange(selectedMethod);
   };
   return (
     <div className='fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center'>
-      <div className='bg-white p-4 rounded shadow-md flex flex-col items-start w-[40%]'>
+      <div className='bg-white p-4 rounded shadow-md flex flex-col items-start w-[95%] md:w-[40%]'>
         <h2 className='text-lg font-bold mb-4'>{titulo}</h2>
         <p className='mb-4'>{mensaje}</p>
         {!confirmDisabled ? (
