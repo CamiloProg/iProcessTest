@@ -6,6 +6,7 @@ import Modal from "./Modal";
 const Pagos = ({ total }) => {
   const { editableTrue } = useContext(EditContext);
 
+  // -------------------------------------------------------------------------
   //Funcion para resetear todos los valores a default para poder iniciar el proceso de nuevo
   function reset() {
     setPagos([
@@ -20,10 +21,13 @@ const Pagos = ({ total }) => {
     ]);
   }
 
+  // -------------------------------------------------------------------------
   // Se guardan los pagos en esta variable "pagos" use el localStorage para que
   // el usuario pueda salir o recargar la pagina sin temor a que se borren los datos
   // de las cuotas (el porcentaje, monto, cuantas son, etc).
   // Si no tiene nada en el local, simplemente se ponen los datos default
+
+  //@todo: API GET para obtener los pagos de un usuario
   const [pagos, setPagos] = useState(() => {
     const storedPagos = localStorage.getItem("pagos");
     return storedPagos
@@ -40,6 +44,7 @@ const Pagos = ({ total }) => {
         ];
   });
 
+  // -------------------------------------------------------------------------
   // Estados que permiten pagar una cuota, hice estos 2, para poder identificar
   // que pago estan seleccionando y ademas validad con el "canPay" si es una
   // cuota que se pueda pagar, es decir, no puede pagarse si la anterior
@@ -51,6 +56,7 @@ const Pagos = ({ total }) => {
     localStorage.setItem("pagos", JSON.stringify(pagos));
   }, [pagos]);
 
+  // -------------------------------------------------------------------------
   // Hice esta funciona ya que necesitaba recalcular los porcentajes de los pagos
   // pero solo los pendientes, ya que los pagados no son modificables
   // de esta forma cuando se agrega un nuevo pago, se equilibran entre todos los pendientes
@@ -78,17 +84,20 @@ const Pagos = ({ total }) => {
     });
   };
 
+  // -------------------------------------------------------------------------
   // Se crea el nuevo pago con ciertas caracteristicas por default y se cambia
   // al modo editable para que puedan cambiar el nombre y el porcentaje a pagar
   // Use la funcion de recalcular para que se equilibren los porcentajes al crear
+
+  // @todo: API POST para crear nuevo pago
   const crearNuevoPagoEnPosicion = (index) => {
     const nuevoPago = {
       id: pagos.length + 1,
       titulo: `Nuevo`,
-      porcentaje: 0, // Porcentaje inicial de 0
+      porcentaje: 0,
       estado: "pendiente",
       fecha: "",
-      monto: 0, // Monto inicial de 0
+      monto: 0,
       editable: true,
     };
 
@@ -98,13 +107,16 @@ const Pagos = ({ total }) => {
       ...pagos.slice(index + 1),
     ];
     const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
-    setPagos(pagosRecalculados); // Establecer los pagos sin recalcular inicialmente
+    setPagos(pagosRecalculados);
     editableTrue();
   };
 
+  // -------------------------------------------------------------------------
   // Esta funcion fue interesante, ya que se necesita varias verificaciones para no
   // perder porcentaje final o el monto, asi que cuando se elimina un pago
   // decidi que el porcentaje que tuviera, se pasaria al pago pendiente mas cercano
+
+  //@todo: API DELETE para eliminar un pago
   const eliminarPago = (id) => {
     const indexEliminado = pagos.findIndex((pago) => pago.id === id);
     if (indexEliminado === -1 || indexEliminado === 0) return; // No hacer nada si el pago no existe o es el primer pago
@@ -163,8 +175,11 @@ const Pagos = ({ total }) => {
     setPagos(pagosFinales);
   };
 
+  // -------------------------------------------------------------------------
   // Simplemente es necesario un valor para saber si esta pagado o pendiente
   // para distintas funcionalidades en el sistema
+
+  //@todo: API POST para guardar pago como pagado
   const marcarComoPagado = (id) => {
     const nuevosPagos = pagos.map((pago) =>
       pago.id === id && pago.estado === "pendiente"
@@ -176,6 +191,8 @@ const Pagos = ({ total }) => {
     setSelectedPago(null);
   };
 
+
+  // -------------------------------------------------------------------------
   // Realice esta funcion para poder modificar los porcentajes de cada pago,
   // agarrando un poco del pago vecino y tambien la condicion para que nunca
   // se pase del 100% o menos del 0%
@@ -238,14 +255,14 @@ const Pagos = ({ total }) => {
     setCanPay(puedePagar);
     setSelectedPago(pago);
   };
-
+  
+  // -------------------------------------------------------------------------
   // Es necesario para cuando paguen, se coloque el dia en el que se oprimio el boton
   const hoy = new Date().toISOString().split("T")[0];
 
   return (
     <div className='container flex flex-col  justify-center items-center  p-4'>
       <div className='mt-4 flex  overflow-x-auto  md:w-[720px] w-full  '>
-
         {/* Hice este map para mostrar todos los pagos con sus respectivas caracteristicas 
         y con ciertas condiciones para mostrar la linea del tiempo, dependiendo si esta pagado, o si es el primero
         o si es el ultimo, cada uno, tiene una diferente vista */}
