@@ -191,7 +191,6 @@ const Pagos = ({ total }) => {
     setSelectedPago(null);
   };
 
-
   // -------------------------------------------------------------------------
   // Realice esta funcion para poder modificar los porcentajes de cada pago,
   // agarrando un poco del pago vecino y tambien la condicion para que nunca
@@ -255,7 +254,7 @@ const Pagos = ({ total }) => {
     setCanPay(puedePagar);
     setSelectedPago(pago);
   };
-  
+
   // -------------------------------------------------------------------------
   // Es necesario para cuando paguen, se coloque el dia en el que se oprimio el boton
   const hoy = new Date().toISOString().split("T")[0];
@@ -342,8 +341,11 @@ const Pagos = ({ total }) => {
         />
       )}
       {/* Reset para dejar todo por default */}
-      <button className='bg-red-400 w-80 mt-10' onClick={() => reset()}>
-        reset
+      <button
+        className='bg-[#FC4024] hover:scale-105 px-8 py-2 flex justify-center items-center text-lg  rounded-md text-white'
+        onClick={() => reset()}
+      >
+        Reset
       </button>
     </div>
   );
