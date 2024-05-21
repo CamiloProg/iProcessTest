@@ -62,39 +62,34 @@ const PayCard = ({
   };
 
   return (
-    <div
-      key={id}
-      className={`flex flex-col p-3  items-center ${
-        estado === "pagado" ? "" : ""
-      }`}
-    >
+    <div key={id} className={`flex flex-col p-3 z-20 items-center }`}>
       {editable && estado !== "pagado" ? (
         <span
           onClick={handleClickEliminar}
-          className={`border-[3px] flex justify-center text-white items-center cursor-pointer hover:bg-[#FC4024] w-12 h-12 rounded-full ${
-            !editable ? "border-none bg-[#E2E8F0]" : "border-[#FC4024]"
+          className={`border-[3px] flex justify-center bg-white  text-white items-center transition-all duration-500 cursor-pointer hover:bg-[#FC4024] w-12 h-12 rounded-full ${
+            !editable ? "border-none bg-[#E2E8F0] " : "border-[#FC4024]"
           }`}
         >
-          <div>
-            <i className={`fa-solid fa-x`}></i>
-          </div>
+          <i className={`fa-solid fa-x`}></i>
         </span>
       ) : (
         <span
           onClick={() =>
             !editable && estado !== "pagado" && onSelectPago(puedePagar)
           }
-          className={`border-[3px] w-12 h-12 text-[#E2E8F0] hover:text-[#FC4024] rounded-full flex justify-center items-center cursor-pointer hover:border-[#FC4024]  ${
+          className={`border-[3px] w-12 h-12 text-[#E2E8F0] transition-all duration-500 hover:text-[#FC4024] rounded-full flex justify-center items-center cursor-pointer hover:border-[#FC4024]  ${
             estado === "pagado"
-              ? "bg-green-500 text-white flex justify-center items-center"
+              ? "bg-green-500 text-white border-none cursor-default flex justify-center items-center"
               : !editable
               ? " bg-[#E2E8F0]"
-              : "border-[#FC4024]"
+              : "border-[#FC4024] "
           }`}
         >
-          <i className='fa-solid  fa-pencil  '></i>
-
-          {estado === "pagado" ? <img src={iconPaid} alt='' /> : ""}
+          {estado === "pagado" ? (
+            <img src={iconPaid} alt='' />
+          ) : (
+            <i className='fa-solid  fa-pencil  '></i>
+          )}
         </span>
       )}
 
@@ -177,7 +172,7 @@ const PayCard = ({
               />
             </>
           ) : (
-            <p>{formatFecha(fecha)}</p>
+            <p>{fecha ? formatFecha(fecha) : "mm/dd/yyyy"}</p>
           )}
         </>
       )}

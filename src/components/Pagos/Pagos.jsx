@@ -69,10 +69,10 @@ const Pagos = ({ total }) => {
     const nuevoPago = {
       id: pagos.length + 1,
       titulo: `Nuevo`,
-      porcentaje: 0,
+      porcentaje: 0, // Porcentaje inicial de 0
       estado: "pendiente",
       fecha: "",
-      monto: 0,
+      monto: 0, // Monto inicial de 0
       editable: true,
     };
 
@@ -81,9 +81,8 @@ const Pagos = ({ total }) => {
       nuevoPago,
       ...pagos.slice(index + 1),
     ];
-    const pagosRecalculados = recalcularPagosPendientes(nuevosPagos, total);
 
-    setPagos(pagosRecalculados);
+    setPagos(nuevosPagos); // Establecer los pagos sin recalcular inicialmente
     editableTrue();
   };
 
@@ -227,15 +226,29 @@ const Pagos = ({ total }) => {
               puedePagar={index === 0 || pagos[index - 1].estado === "pagado"}
               onSelectPago={(puedePagar) => handleSelectPago(pago, puedePagar)}
             />
-            {index < pagos.length - 1 &&
-            pago.estado === "pagado" &&
-            pagos[index + 1].estado === "pagado" ? null : (
-              <button
-                onClick={() => crearNuevoPagoEnPosicion(index)}
-                className='mx-2 p-2 bg-blue-500 text-white rounded'
-              >
-                Añadir Pago
-              </button>
+            {pagos.length === 1 ? (
+              <div className='relative -z-20-'>
+                <hr className='border-[#E2E8F0] border-2 w-[130px] absolute top-9 -right-16' />
+
+                <button
+                  onClick={() => crearNuevoPagoEnPosicion(index)}
+                  className='mx-2 p-2 h-10  absolute left-8 mt-4 w-10 rounded-full bg-[#E2E8F0] z-30  text-[#FC4024] transition-all duration-500'
+                >
+                  <i className='fa-solid fa-plus'></i>
+                </button>
+              </div>
+            ) : index + 1 === pagos.length ? null : index < pagos.length - 2 &&
+              pago.estado === "pagado" &&
+              pagos[index + 1].estado === "pagado" ? null : (
+              <div className='relative -z-20-'>
+                <hr className='border-[#E2E8F0] border-2 w-[130px] absolute top-9 -right-16' />
+                <button
+                  onClick={() => crearNuevoPagoEnPosicion(index)}
+                  className='mx-2 p-2 h-10 bg-transparent text-transparent absolute -left-8 mt-4 w-10 rounded-full hover:bg-[#E2E8F0] z-30  hover:text-[#FC4024] transition-all duration-500'
+                >
+                  <i className='fa-solid fa-plus'></i>
+                </button>
+              </div>
             )}
           </React.Fragment>
         ))}
