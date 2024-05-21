@@ -67,9 +67,6 @@ const PayCard = ({
       className={`flex flex-col p-3  items-center ${
         estado === "pagado" ? "" : ""
       }`}
-      onClick={() =>
-        !editable && estado !== "pagado" && onSelectPago(puedePagar)
-      }
     >
       {editable && estado !== "pagado" ? (
         <span
@@ -84,14 +81,19 @@ const PayCard = ({
         </span>
       ) : (
         <span
-          className={`border-[3px] w-12 h-12 rounded-full ${
+          onClick={() =>
+            !editable && estado !== "pagado" && onSelectPago(puedePagar)
+          }
+          className={`border-[3px] w-12 h-12 text-[#E2E8F0] hover:text-[#FC4024] rounded-full flex justify-center items-center cursor-pointer hover:border-[#FC4024]  ${
             estado === "pagado"
               ? "bg-green-500 text-white flex justify-center items-center"
               : !editable
-              ? "border-none bg-[#E2E8F0]"
+              ? " bg-[#E2E8F0]"
               : "border-[#FC4024]"
           }`}
         >
+          <i className='fa-solid  fa-pencil  '></i>
+
           {estado === "pagado" ? <img src={iconPaid} alt='' /> : ""}
         </span>
       )}
@@ -160,15 +162,23 @@ const PayCard = ({
         </>
       ) : (
         <>
-          <p className='self-start mt-3 font-normal text-[#94A3B8]'>Vence</p>
-          <input
-            type='date'
-            value={fecha}
-            onChange={(e) => handleFechaCambio(id, e.target.value)}
-            min={hoy}
-            className=''
-            disabled={!editable || estado === "pagado"}
-          />
+          {editable ? (
+            <>
+              <p className='self-start mt-3 font-normal text-[#94A3B8]'>
+                Vence
+              </p>
+              <input
+                type='date'
+                value={fecha}
+                onChange={(e) => handleFechaCambio(id, e.target.value)}
+                min={hoy}
+                className=''
+                disabled={!editable || estado === "pagado"}
+              />
+            </>
+          ) : (
+            <p>{formatFecha(fecha)}</p>
+          )}
         </>
       )}
     </div>

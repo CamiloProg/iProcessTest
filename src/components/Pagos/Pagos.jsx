@@ -243,12 +243,10 @@ const Pagos = ({ total }) => {
 
       {selectedPago && (
         <Modal
-          titulo={
-            canPay ? "Confirmar Pago" : "No se puede pagar fuera de orden"
-          }
+          titulo={canPay ? "Pagar" : "No se puede pagar fuera de orden"}
           mensaje={
             canPay
-              ? "¿Está seguro de que desea marcar este pago como pagado?"
+              ? "Selecciona metodo de pago."
               : "Debe pagar los pagos anteriores antes de realizar este pago."
           }
           onClose={() => setSelectedPago(null)}
