@@ -1,6 +1,6 @@
 # Prueba iProcess || App de Creditos
 
-![alt text](![image](https://github.com/CamiloProg/iProcessTest/assets/106632070/0111b001-4243-4e10-8864-23f1981202a5)
+![image](https://github.com/CamiloProg/iProcessTest/assets/106632070/0111b001-4243-4e10-8864-23f1981202a5)
 
 
 Pagina web donde podras ver tus creditos y las cuotas que tienes con las siguientes funcionalidades: 
